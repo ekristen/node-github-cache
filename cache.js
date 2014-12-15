@@ -5,14 +5,24 @@ var leveldb   = require('level');
 var lodash    = require('lodash');
 var util      = require('util');
 
+/**
+ * Copyright 2014
+ * Author: Erik Kristensen <erik@erikkristensen.com>
+ *
+ * GitHubCache is a transparent caching layer for node-github.
+ * It overloads all API functions and introduces a caching mechanism.
+ * You can call all the original functions by using an underscore in
+ * front of their original function name.
+ */
 var GitHubCache = module.exports = function(options) {
   GitHubCache.super_.call(this, options);
 
-  var apis = ['issues', 'orgs', 'repos', 'user'];
+  var apis = Object.keys(this[this.version].routes);
 
   var self = this;
 
   async.eachSeries(apis, function(api, api_callback) {
+    api = toCamelCase(api);
     var keys = Object.keys(self[api]);
 
     async.eachSeries(keys, function(key, key_callback) {
@@ -58,7 +68,6 @@ var GitHubCache = module.exports = function(options) {
 
 util.inherits(GitHubCache, GitHubApi);
 
-
 GitHubCache.prototype.getCache = function(cache_id, callback) {
   var self = this;
   self.cachedb.get(cache_id + ':tag', function(err, tag) {
@@ -79,4 +88,14 @@ GitHubCache.prototype.putCache = function(cache_id, cache_data, callback) {
       callback(null);
     });
   });
+};
+
+// Borrowed from https://github.com/mikedeboer/node-github/blob/master/util.js
+function toCamelCase(str, upper) {
+  str = str.toLowerCase().replace(/(?:(^.)|(\s+.)|(-.))/g, function(match) {
+    return match.charAt(match.length - 1).toUpperCase();
+  });
+  if (upper)
+    return str;
+  return str.charAt(0).toLowerCase() + str.substr(1);
 };

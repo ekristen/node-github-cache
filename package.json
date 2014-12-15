@@ -1,0 +1,21 @@
+{
+  "name": "node-github-cache",
+  "author": "Erik Kristensen <erik@erikkristensen.com>",
+  "homepage": "https://github.com/ekristen/node-github-cache",
+  "description": "Transparent caching layer for node-github module",
+  "version": "0.1.0",
+  "dependencies": {
+    "github": "~0.2.3",
+    "async": "~0.9.0",
+    "level": "~0.18.0",
+    "lodash": "~2.4.1"
+  },
+  "main": "./cache.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/ekristen/node-github-cache.git"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org"
+  }
+}

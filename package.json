@@ -15,7 +15,14 @@
     "type": "git",
     "url": "git://github.com/ekristen/node-github-cache.git"
   },
+  "bugs": "https://github.com/ekristen/node-github-cache/issues",
   "publishConfig": {
     "registry": "https://registry.npmjs.org"
-  }
+  },
+  "license": "MIT",
+  "keywords": [
+    "github",
+    "cache",
+    "leveldb"
+  ]
 }

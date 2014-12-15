@@ -63,7 +63,7 @@ var GitHubCache = module.exports = function(options) {
     if (err) throw Error(err);
   });
 
-  this.cachedb = leveldb(options.db || './cachedb');
+  this.cachedb = leveldb(this.config.cachedb || './cachedb');
 };
 
 util.inherits(GitHubCache, GitHubApi);

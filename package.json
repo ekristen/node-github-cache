@@ -3,7 +3,7 @@
   "author": "Erik Kristensen <erik@erikkristensen.com>",
   "homepage": "https://github.com/ekristen/node-github-cache",
   "description": "Transparent caching layer for node-github module",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "dependencies": {
     "github": "~0.2.3",
     "async": "~0.9.0",

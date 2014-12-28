@@ -19,7 +19,8 @@ If you want to not use the cache at any time, add `cache: false` to your API cal
 ## Settings
 
 1. `cachedb` - this is a value passed to the creation of the API object, it is a path to a location to store the cached data.
-2. `cache` this is a value that can be passed to any API function with a boolean value to disable or enable the cache. `Default: true`
+2. `cache` - this is a value that can be passed to any API function with a boolean value to disable or enable the cache. `Default: true`
+3. `validateCache` - `Default: true` - Check cached etag using `If-None-Match` with GitHub API before using the cached data. Ensures you have the latest data at all times. Setting to `false` allows you to use cached data without making the API call, results in quicker lookups. Especially useful if you are making dozens of API calls or more.
 
 ## Example
 
@@ -29,12 +30,22 @@ var GitHubApi = require("github-cache");
 var github = new GitHubApi({
   version: "3.0.0",
   debug: true,
-  cachedb: './cachedb'
+  cachedb: './cachedb',
+  validateCache: true
 });
+
 github.user.getFollowingFromUser({
   user: "ekristen",
   cache: false
 }, function(err, res) {
   console.log(JSON.stringify(res));
 });
+
+github.orgs.getTeams({
+  org: 'private',
+  validateCache: false
+}, function(err, teams) {
+  console.log(teams);
+});
+
 ```

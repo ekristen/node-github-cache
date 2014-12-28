@@ -14,8 +14,8 @@ var util      = require('util');
  * You can call all the original functions by using an underscore in
  * front of their original function name.
  */
-var GitHubCache = module.exports = function(options) {
-  GitHubCache.super_.call(this, options);
+var GitHubCache = module.exports = function(global_options) {
+  GitHubCache.super_.call(this, global_options);
 
   var apis = Object.keys(this[this.version].routes);
 
@@ -30,13 +30,18 @@ var GitHubCache = module.exports = function(options) {
 
       self[api][key] = function(options, fun_callback) {
         var cache_id = util.format("%s:%s:%s", api, key, crypto.createHash('sha1').update(JSON.stringify(options)).digest('hex'));
-        options = lodash.merge({cache: true}, options);
+        default_opts = lodash.merge({cache: true, validateCache: true}, lodash.pick(global_options, ['validateCache', 'cache']));
+        options = lodash.merge(default_opts, options);
 
         self.getCache(cache_id, function(err, cached_etag, cached_data) {
           if (cached_etag && options.cache == true)
             options = lodash.merge({headers: {'If-None-Match': cached_etag}}, options);
 
-          opts = lodash.omit(options, 'cache');
+          if (options.validateCache == false && typeof(cached_data) != "undefined") {
+            return fun_callback(null, cached_data);
+          }
+
+          opts = lodash.omit(options, ['cache', 'validateCache']);
           self[api]['_' + key](opts, function(err, results) {
             if (err) return fun_callback(err);
 
@@ -48,7 +53,7 @@ var GitHubCache = module.exports = function(options) {
 
             self.putCache(cache_id, results, function(err) {
               if (err) return fun_callback(err);
-              return fun_callback(null, results);
+              fun_callback(null, results);
             });
           });
         })

@@ -86,6 +86,10 @@ GitHubCache.prototype.getCache = function(cache_id, callback) {
 
 GitHubCache.prototype.putCache = function(cache_id, cache_data, callback) {
   var self = this;
+
+  if (typeof(cache_data.meta.etag) == 'undefined')
+    return callback(null);
+
   self.cachedb.put(cache_id + ':tag', cache_data.meta.etag, function(err) {
     if (err) return callback(err);
     self.cachedb.put(cache_id + ':data', JSON.stringify(cache_data), function(err) {

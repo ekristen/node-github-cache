@@ -29,7 +29,8 @@ var GitHubCache = module.exports = function(global_options) {
       self[api]['_' + key] = self[api][key];
 
       self[api][key] = function(options, fun_callback) {
-        var cache_id = util.format("%s:%s:%s", api, key, crypto.createHash('sha1').update(JSON.stringify(options)).digest('hex'));
+        var options_key = loadash.omit(options, ['validateCache', 'cache']);
+        var cache_id = util.format("%s:%s:%s", api, key, crypto.createHash('sha1').update(JSON.stringify(options_key)).digest('hex'));
         default_opts = lodash.merge({cache: true, validateCache: true}, lodash.pick(global_options, ['validateCache', 'cache']));
         options = lodash.merge(default_opts, options);
 

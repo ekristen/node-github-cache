@@ -2,6 +2,8 @@
 
 This is a Node.JS module that transparently adds caching for the [node-github](https://github.com/mikedeboer/node-github) project.
 
+**Note:** Version 1.0.0 is in testing and is the current code in **master**. Many changes were made from 0.3.0 to 1.0.0 in caching behavior. If you upgrade or use the master branch, delete your cache database folder before upgrade to avoid conflicts.
+
 ## Installation
 
 Install with Node.JS package manager

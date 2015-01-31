@@ -26,7 +26,7 @@ If you want to not use the cache at any time, add `cache: false` to your API cal
 
 ## Example
 
-```
+```javascript
 var GitHubApi = require("github-cache");
 
 var github = new GitHubApi({

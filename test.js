@@ -95,3 +95,68 @@ test('delete gist', function(t) {
   });
 });
 
+test('get gists - no page', function(t) {
+  ghc.gists.getAll({
+    
+  }, function(err, gists) {
+    t.ok(!err, 'there should be no error getting a list of gists');
+    t.ok(gists.meta.status, '200 OK')
+    t.end();
+  });
+})
+
+test('get gists - no page - should be from cache', function(t) {
+  ghc.gists.getAll({
+    
+  }, function(err, gists) {
+    t.ok(!err, 'there should be no error getting a list of gists');
+    t.ok(gists.meta.status, '304 Not Modified')
+    t.end();
+  })
+})
+
+test('get gists - page #0', function(t) {
+  ghc.gists.getAll({
+    page: 0
+  }, function(err, gists) {
+    t.ok(!err, 'there should be no error getting a list of gists');
+    t.ok(gists.meta.status, '200 OK')
+    t.end();
+  })
+})
+
+test('get gists - page #0 -- should be from cache', function(t) {
+  ghc.gists.getAll({
+    page: 0
+  }, function(err, gists) {
+    t.ok(!err, 'there should be no error getting a list of gists');
+    t.ok(gists.meta.status, '304 Not Modified')
+    t.end();
+  })
+})
+
+var num_per_page = Math.floor(Math.random()*101)
+
+test('get gists - page #0 - random per page', function(t) {
+  ghc.gists.getAll({
+    page: 0,
+    per_page: num_per_page
+  }, function(err, gists) {
+    t.ok(!err, 'there should be no error getting a list of gists');
+    t.ok(gists.meta.status, '200 OK')
+    t.end();
+  })
+})
+
+test('get gists - page #0 - random per page -- should be from cache', function(t) {
+  ghc.gists.getAll({
+    page: 0,
+    per_page: num_per_page
+  }, function(err, gists) {
+    t.ok(!err, 'there should be no error getting a list of gists');
+    t.ok(gists.meta.status, '304 Not Modified')
+    t.end();
+  })
+})
+
+

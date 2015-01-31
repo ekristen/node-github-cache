@@ -3,13 +3,17 @@
   "author": "Erik Kristensen <erik@erikkristensen.com>",
   "homepage": "https://github.com/ekristen/node-github-cache",
   "description": "Transparent caching layer for node-github module",
-  "version": "0.3.0",
+  "version": "1.0.0",
   "dependencies": {
-    "github": "~0.2.3",
     "async": "~0.9.0",
+    "debug": "~2.1.1",
+    "github": "~0.2.3",
     "level": "~0.18.0",
-    "lodash": "~2.4.1",
-    "debug": "~2.1.1"
+    "lodash": "~2.4.1"
+  },
+  "devDependencies": {
+    "tap": "^0.5.0",
+    "rimraf": "^2.2.8"
   },
   "main": "./cache.js",
   "repository": {

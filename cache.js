@@ -4,10 +4,10 @@ var GitHubApi = require('github');
 var leveldb   = require('level');
 var lodash    = require('lodash');
 var util      = require('util');
-var debug     = require('debug')('github-cache');
+var debug     = require('debug')('github-cache:debug');
 
 /**
- * Copyright 2014
+ * Copyright 2014-2015
  * Author: Erik Kristensen <erik@erikkristensen.com>
  *
  * GitHubCache is a transparent caching layer for node-github.
@@ -23,42 +23,58 @@ var GitHubCache = module.exports = function(global_options) {
   var self = this;
 
   async.eachSeries(apis, function(api, api_callback) {
+    var raw_api_name = api;
     api = toCamelCase(api);
-    var keys = Object.keys(self[api]);
+
+    var keys = Object.keys(self[self.version].routes[raw_api_name]);
 
     async.eachSeries(keys, function(key, key_callback) {
+      var raw_key_name = key
+      key = toCamelCase(key);
+
       self[api]['_' + key] = self[api][key];
 
       self[api][key] = function(options, fun_callback) {
-        var cache_id = self.cacheId(api, key, options);
+        if (typeof(fun_callback) != 'function') fun_callback = function() {};
+        
+        var allowed_options = Object.keys(self[self.version].routes[raw_api_name][raw_key_name].params).map(function(p) {
+          return p.replace('$','');
+        });
 
         default_opts = lodash.merge({cache: true, validateCache: true}, lodash.pick(global_options, ['validateCache', 'cache']));
         options = lodash.merge(default_opts, options);
+        debug('API: %s, Function: %s, Options: %j', api, key, options);
 
-        self.getCache(cache_id, function(err, cached_etag, cached_data) {
+        self.getCache(raw_api_name, raw_key_name, options, function(err, cached_etag, cached_data) {
+          if (err) return fun_callback(err);
+
           if (cached_etag && options.cache == true)
-            options = lodash.merge({headers: {'If-None-Match': cached_etag}}, options);
+            options = lodash.merge({headers: {'if-none-match': cached_etag}}, options);
 
           if (options.validateCache == false && typeof(cached_data) != "undefined") {
+            debug('ValidateCache is False, Cached Results Returned, API: %s, Function: %s', api, key);
+            cached_data.meta = { cached: true, validatedCache: false };
             return fun_callback(null, cached_data);
           }
 
-          var opts = lodash.omit(options, ['cache', 'validateCache', 'invalidateCache']);
+          var opts = lodash.pick(options, allowed_options.concat(['headers']));
+          debug('Options: %j', opts)
           self[api]['_' + key](opts, function(err, results) {
             if (err) return fun_callback(err);
-
-            if (typeof(options.invalidateCache) != 'undefined')
-              self.invalidateCache(options.invalidateCache, opts);
 
             if (options.cache == false)
               return fun_callback(null, results);
 
-            if (results.meta.status == '304 Not Modified')
+            if (results.meta.status == '304 Not Modified') {
+              cached_data.meta = results.meta;
+              cached_data.meta.cached = true;
+              cached_data.meta.validatedCached = true;
               return fun_callback(null, cached_data);
+            }
 
-            self.putCache(cache_id, results, function(err) {
+            self.putCache(raw_api_name, raw_key_name, options, results, function(err, data) {
               if (err) return fun_callback(err);
-              fun_callback(null, results);
+              fun_callback(null, data);
             });
           });
         })
@@ -78,67 +94,93 @@ var GitHubCache = module.exports = function(global_options) {
 
 util.inherits(GitHubCache, GitHubApi);
 
-GitHubCache.prototype.getCache = function(cache_id, callback) {
+GitHubCache.prototype.getCache = function(api, fun, options, callback) {
   var self = this;
-  self.cachedb.get(cache_id + ':tag', function(err, tag) {
-    if (err) return callback(err);
-    self.cachedb.get(cache_id + ':data', function(err, data) {
-      if (err) return callback(err);
-      callback(null, tag, JSON.parse(data));
+  var cache_id = self.cacheId(api, fun, options);
+  
+  self.cachedb.get(cache_id + ':tag', {valueEncoding: 'utf8'}, function(err, tag) {
+    if (err && err.status != '404') return callback(err);
+    self.cachedb.get('etag!' + tag, {valueEncoding: 'json'}, function(err, data) {
+      if (err && err.status != '404') return callback(err);
+      callback(null, tag, data);
     });
   });
 };
 
-GitHubCache.prototype.putCache = function(cache_id, cache_data, callback) {
+GitHubCache.prototype.putCache = function(api, fun, options, cache_data, callback) {
   var self = this;
+  
+  var method = self[self.version].routes[api][fun].method;
+
+  if (method == 'POST') // Do Not Cache On Creates
+    return callback(null, cache_data);
+
+  if (method == 'DELETE') // If Delete Clear Affected Cache Keys
+    return self.deleteCache(api, fun, options, callback);
+
   if (typeof(cache_data.meta.etag) == 'undefined')
     return callback(null);
 
-  self.cachedb.put(cache_id + ':tag', cache_data.meta.etag, function(err) {
+  var cache_data_meta = cache_data.meta;
+  delete cache_data.meta;
+
+  var cache_id = self.cacheId(api, fun, options);    
+
+  var ops = [
+    { type: 'put', key: cache_id + ':tag',  value: cache_data_meta.etag, keyEncoding: 'utf8', valueEncoding: 'utf8' },
+    { type: 'put', key: cache_id + ':meta', value: cache_data_meta, keyEncoding: 'utf8', valueEncoding: 'json' },
+    { type: 'put', key: 'etag!' + cache_data_meta.etag, value: cache_data, keyEncoding: 'utf8', valueEncoding: 'json' },
+    { type: 'put', key: 'etag!' + cache_data_meta.etag + '!cache_id!' + cache_id, value: cache_id, keyEncoding: 'utf8', valueEncoding: 'utf8' }
+  ];
+
+  self.cachedb.batch(ops, function(err) {
     if (err) return callback(err);
-    self.cachedb.put(cache_id + ':data', JSON.stringify(cache_data), function(err) {
-      if (err) return callback(err);
-      callback(null);
-    });
+    cache_data.meta = cache_data_meta;
+    callback(null, cache_data);
   });
 };
 
-GitHubCache.prototype.invalidateCache = function(invalidateOpts, options) {
+GitHubCache.prototype.deleteCache = function(api, fun, options, callback) {
   var self = this;
-  var invalid = false;
-  
-  debug('invalidateCache @ opts: %j', invalidateOpts);
 
-  ['api', 'fun', 'fields'].forEach(function(f) {
-    if (typeof(invalidateOpts[f]) == 'undefined')
-      invalid = true;
-  })
-  if (invalid == true) return;
+  var cache_id = self.cacheId(api, fun, options);
 
-  options = lodash.omit(options, ['invalidateCache', 'cache', 'validateCache', 'headers'])
-  options = lodash.pick(options, invalidateOpts.fields);
-  options = lodash.merge(options, {page: 0, per_page: 100});
+  self.cachedb.get(cache_id + ':tag', function(err, etag) {
+    if (err) return callback(err);
 
-  var cache_id = self.cacheId(invalidateOpts.api, invalidateOpts.fun, options);
-
-  debug('invalidateCache @ invalid: %j, options: %j, id: %s', invalidateOpts, options, cache_id);
-  
-  var ops = [
-    { type: 'del', key: cache_id + ':tag' },
-    { type: 'del', key: cache_id + ':data' }
-  ];
-  
-  self.cachedb.batch(ops, function(err) {
-    if (err) debug('Error Invaliding Cache: %s', err);
+    var ops = [
+      { type: 'del', key: cache_id + ':tag' },
+      { type: 'del', key: cache_id + ':meta' },
+      { type: 'del', key: 'etag!' + etag },
+      { type: 'del', key: 'etag!' + etag + '!cache_id!' + cache_id }
+    ];
+    
+    self.cachedb.batch(ops, function(err) {
+      if (err) return callback(err);
+      callback();
+    });
   });
 };
 
 GitHubCache.prototype.cacheId = function(api, fun, options) {
   var self = this;
-  var options_key = lodash.omit(options, ['validateCache', 'cache', 'invalidateCache', 'headers']);
-  debug('CACHEID api: %s, function: %s, options: %j', api, fun, options_key);
-  var cache_id = util.format("%s:%s:%s", api, fun, crypto.createHash('sha1').update(JSON.stringify(options_key)).digest('hex'));
-  debug('CACHEID id: %s', cache_id);
+  
+  var mappings = {
+    'create': 'get',
+    'delete': 'get',
+    'update': 'get',
+    'edit': 'get'
+  };
+  
+  var allowed_options = Object.keys(self[self.version].routes[api][mappings[fun] || fun].params).map(function(p) {
+    return p.replace('$','');
+  });
+  
+  debug('cacheId allowed_options: %j', allowed_options);
+  var options_key = lodash.pick(options, allowed_options);
+  debug('cacheId api: %s, original: %s, function: %s, options: %j', api, fun, mappings[fun] || fun, options_key);
+  var cache_id = util.format("%s:%s:%s", api, mappings[fun] || fun, crypto.createHash('sha1').update(JSON.stringify(options_key)).digest('hex'));
+  debug('cacheId cid: %s', cache_id);
   return cache_id;
 };
 

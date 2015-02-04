@@ -155,15 +155,18 @@ GitHubCache.prototype.deleteCache = function(api, fun, options, callback) {
   var cache_id = self.cacheId(api, fun, options);
 
   self.cachedb.get(cache_id + ':tag', function(err, etag) {
-    if (err) return callback(err);
+    if (err && err.status != 404) return callback(err);
 
     var ops = [
       { type: 'del', key: cache_id + ':tag' },
       { type: 'del', key: cache_id + ':meta' },
-      { type: 'del', key: 'etag!' + etag },
-      { type: 'del', key: 'etag!' + etag + '!cache_id!' + cache_id }
     ];
-    
+
+    if (!err) {
+      ops.push({ type: 'del', key: 'etag!' + etag })
+      ops.push({ type: 'del', key: 'etag!' + etag + '!cache_id!' + cache_id });
+    }
+
     self.cachedb.batch(ops, function(err) {
       if (err) return callback(err);
       callback();

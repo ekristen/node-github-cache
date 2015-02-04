@@ -120,8 +120,12 @@ GitHubCache.prototype.putCache = function(api, fun, options, cache_data, callbac
   if (method == 'POST') // Do Not Cache On Creates
     return callback(null, cache_data);
 
-  if (method == 'DELETE') // If Delete Clear Affected Cache Keys
-    return self.deleteCache(api, fun, options, callback);
+  if (method == 'DELETE') { // If Delete Clear Affected Cache Keys
+    return self.deleteCache(api, fun, options, function(err) {
+      if (err) return callback(err);
+      callback(null, cache_data);
+    });
+  }
 
   if (typeof(cache_data.meta.etag) == 'undefined')
     return callback(null);

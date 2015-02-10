@@ -184,7 +184,8 @@ GitHubCache.prototype.cacheId = function(api, fun, options) {
     'edit': 'get'
   };
   
-  var allowed_options = Object.keys(self[self.version].routes[api][mappings[fun] || fun].params).map(function(p) {
+  var params = self[self.version].routes[api][mappings[fun] || fun].params || self[self.version].routes[api][fun];
+  var allowed_options = Object.keys(params).map(function(p) {
     return p.replace('$','');
   });
   

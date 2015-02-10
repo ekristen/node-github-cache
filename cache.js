@@ -176,15 +176,18 @@ GitHubCache.prototype.deleteCache = function(api, fun, options, callback) {
 
 GitHubCache.prototype.cacheId = function(api, fun, options) {
   var self = this;
-  
+
+  /*
   var mappings = {
     'create': 'get',
     'delete': 'get',
     'update': 'get',
     'edit': 'get'
   };
+  var params = self[self.version].routes[api][mappings[fun]].params
+  */
   
-  var params = self[self.version].routes[api][mappings[fun] || fun].params || self[self.version].routes[api][fun];
+  var params = self[self.version].routes[api][fun].params;
   var allowed_options = Object.keys(params).map(function(p) {
     return p.replace('$','');
   });

@@ -194,8 +194,10 @@ GitHubCache.prototype.cacheId = function(api, fun, options) {
   
   debug('cacheId allowed_options: %j', allowed_options);
   var options_key = lodash.pick(options, allowed_options);
-  debug('cacheId api: %s, original: %s, function: %s, options: %j', api, fun, mappings[fun] || fun, options_key);
-  var cache_id = util.format("%s:%s:%s", api, mappings[fun] || fun, crypto.createHash('sha1').update(JSON.stringify(options_key)).digest('hex'));
+  //debug('cacheId api: %s, original: %s, function: %s, options: %j', api, fun, mappings[fun] || fun, options_key);
+  debug('cacheId api: %s, original: %s, function: %s, options: %j', api, fun, fun, options_key);
+  //var cache_id = util.format("%s:%s:%s", api, mappings[fun] || fun, crypto.createHash('sha1').update(JSON.stringify(options_key)).digest('hex'));
+  var cache_id = util.format("%s:%s:%s", api,fun, crypto.createHash('sha1').update(JSON.stringify(options_key)).digest('hex'));
   debug('cacheId cid: %s', cache_id);
   return cache_id;
 };

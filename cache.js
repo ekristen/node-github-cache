@@ -74,7 +74,7 @@ var GitHubCache = module.exports = function(global_options) {
   });
 
   this.config.cachedb = this.config.cachedb || './cachedb';
-  if (typeof(this.config.cachedb.db) != 'undefined') {
+  if (typeof(this.config.cachedb) == 'object' && typeof(this.config.cachedb.put) == 'function') {
     this.cachedb = this.config.cachedb;
   } else {
     this.cachedb = leveldb(this.config.cachedb || './cachedb');

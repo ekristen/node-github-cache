@@ -1,0 +1,13 @@
+language: node_js
+
+node_js:
+  - "2.2"
+  - "0.12"
+  - "0.10"
+
+script:
+  - npm test
+
+env:
+  global:
+    secure: ixd6N5vX8YISGev30M3gMsGrvTVNckixDMLc3UVmRm5i7es3jk+p8D81QIWHODSYurdNe5AgZhZwtWq7dTZVFdgPWHb5mcZfLXzrelZ+M7UNwB+p+QIewC9xNd9noYW/e362q8rtM0CDG/9atsVw/MX9GvXgftgZJ+lB4JMTk/E=

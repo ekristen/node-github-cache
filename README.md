@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/ekristen/node-github-cache.svg)](https://travis-ci.org/ekristen/node-github-cache) [![Dependency Status](https://david-dm.org/ekristen/node-github-cache.svg)](https://david-dm.org/ekristen/node-github-cache) [![devDependency Status](https://david-dm.org/ekristen/node-github-cache/dev-status.svg)](https://david-dm.org/ekristen/node-github-cache#info=devDependencies)
+
 # Caching Layer for Node-GitHub
 
 This is a Node.JS module that transparently adds caching for the [node-github](https://github.com/mikedeboer/node-github) project.

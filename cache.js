@@ -133,8 +133,11 @@ GitHubCache.prototype.invalidateCache = function(invalidateOpts, options) {
     { type: 'del', key: cache_id + ':data' }
   ];
   
-  self.cachedb.batch(ops, function(err) {
+  self.cachedb.del(cache_id + ':tag', function(err) {
     if (err) debug('Error Invaliding Cache: %s', err);
+    self.cachedb.del(cache_id + ':data', function(err) {
+      if (err) debug('Error Invaliding Cache: %s', err);
+    });
   });
 };
 

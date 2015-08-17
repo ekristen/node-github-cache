@@ -20,6 +20,12 @@ var GitHubCache = module.exports = function(global_options) {
   var apis = Object.keys(this[this.version].routes);
 
   var self = this;
+  self.prefix = global_options.prefix || '';
+  self.separator = global_options.separator || ':';
+
+  if (self.prefix != '') {
+    self.prefix += self.separator
+  }
 
   apis.forEach(function(api) {
     api = toCamelCase(api);
@@ -84,8 +90,8 @@ util.inherits(GitHubCache, GitHubApi);
 GitHubCache.prototype.getCache = function(cache_id, callback) {
   var self = this;
   debug('getCache id: %s', cache_id)
-  self.cachedb.get(cache_id + ':tag', function(err, tag) {
-    debug('getCache id: %s, tag: %s', (cache_id + ':tag'), tag)
+  self.cachedb.get(cache_id + self.separator + 'tag', function(err, tag) {
+    debug('getCache id: %s, tag: %s', (cache_id + self.separator + 'tag'), tag)
     if (err && err.status == '404') {
       return callback(null, false, false)
     }
@@ -93,8 +99,8 @@ GitHubCache.prototype.getCache = function(cache_id, callback) {
       debug('getCache error1: %j', err)
       return callback(err);
     }
-    self.cachedb.get(cache_id + ':data', function(err, data) {
-      debug('getCache id: %s, data: %j', (cache_id + ':data'), data)
+    self.cachedb.get(cache_id + self.separator + 'data', function(err, data) {
+      debug('getCache id: %s, data: %j', (cache_id + self.separator + 'data'), data)
       if (err && err.status == '404') {
         return callback(null, false, false)
       }
@@ -102,7 +108,13 @@ GitHubCache.prototype.getCache = function(cache_id, callback) {
         debug('getCache error1: %j', err)
         return callback(err);
       }
-      callback(null, tag, JSON.parse(data));
+
+      var d = {}
+      try {
+        d = JSON.parse(data)
+      } catch (e) {}
+
+      callback(null, tag, d);
     });
   });
 };
@@ -115,17 +127,17 @@ GitHubCache.prototype.putCache = function(cache_id, cache_data, callback) {
     return callback(null);
   }
 
-  self.cachedb.put(cache_id + ':tag', cache_data.meta.etag, function(err) {
-    debug('putCache id: %s, tag: %s', (cache_id + ':tag'), cache_data.meta.etag)
+  self.cachedb.put(cache_id + self.separator + 'tag', cache_data.meta.etag, function(err) {
+    debug('putCache id: %s, tag: %s', (cache_id + self.separator + 'tag'), cache_data.meta.etag)
     if (err) {
-      debug('putCache id: %s, err: %j', (cache_id + ':tag'), err)
+      debug('putCache id: %s, err: %j', (cache_id + self.separator + 'tag'), err)
       return callback(err);
     }
 
-    self.cachedb.put(cache_id + ':data', JSON.stringify(cache_data), function(err) {
-      debug('putCache id: %s, data: %j', (cache_id + ':data'), cache_data)
+    self.cachedb.put(cache_id + self.separator + 'data', JSON.stringify(cache_data), function(err) {
+      debug('putCache id: %s, data: %j', (cache_id + self.separator + 'data'), cache_data)
       if (err) {
-        debug('putCache id: %s, err: %j', (cache_id + ':data'), err)
+        debug('putCache id: %s, err: %j', (cache_id + self.separator + 'data'), err)
         return callback(err);
       }
 
@@ -155,8 +167,8 @@ GitHubCache.prototype.invalidateCache = function(invalidateOpts, options) {
   debug('invalidateCache @ invalid: %j, options: %j, id: %s', invalidateOpts, options, cache_id);
   
   var ops = [
-    { type: 'del', key: cache_id + ':tag' },
-    { type: 'del', key: cache_id + ':data' }
+    { type: 'del', key: self.prefix + cache_id + self.separator + 'tag' },
+    { type: 'del', key: self.prefix + cache_id + self.separator + 'data' }
   ];
   
   self.cachedb.del(cache_id + ':tag', function(err) {
@@ -170,7 +182,7 @@ GitHubCache.prototype.invalidateCache = function(invalidateOpts, options) {
 GitHubCache.prototype.cacheId = function(api, fun, options) {
   var self = this;
   var options_key = lodash.omit(options, ['validateCache', 'cache', 'invalidateCache', 'headers']);
-  var cache_id = util.format("%s:%s:%s", api, fun, crypto.createHash('sha1').update(JSON.stringify(options_key)).digest('hex'));
+  var cache_id = util.format("%s%s%s%s%s%s", self.prefix, api, self.separator, fun, self.separator,  crypto.createHash('sha1').update(JSON.stringify(options_key)).digest('hex'));
   debug('cacheId - api: %s, function: %s, options: %j, id: %s', api, fun, options_key, cache_id);
   return cache_id;
 };

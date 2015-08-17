@@ -109,3 +109,31 @@ test('do not validate cache', function(t) {
   });
 });
 
+
+test('non-default options', function(t) {
+  
+  var dbpath = './testcachedb' + new Date().getTime()
+  
+  var github = new GitHubAPI({
+    version: "3.0.0",
+    cachedb: dbpath,
+    prefix: 'cache',
+    separator: '/'
+  });
+  
+  github.authenticate({
+    type: 'oauth',
+    token: process.env.GHTOKEN
+  });
+
+  github.user.getFollowingFromUser({
+    user: "ekristen",
+  }, function(err, data1) {
+    t.ok(!err)
+    t.equal(typeof data1.meta, 'object')
+
+    //rimraf(dbpath, t.end.bind(null))
+  });
+});
+
+

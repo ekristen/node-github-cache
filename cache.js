@@ -1,4 +1,3 @@
-var async     = require('async');
 var crypto    = require('crypto');
 var GitHubApi = require('github');
 var leveldb   = require('level');
@@ -22,23 +21,29 @@ var GitHubCache = module.exports = function(global_options) {
 
   var self = this;
 
-  async.eachSeries(apis, function(api, api_callback) {
+  apis.forEach(function(api) {
     api = toCamelCase(api);
+    debug('loading api: %s', api)
     var keys = Object.keys(self[api]);
 
-    async.eachSeries(keys, function(key, key_callback) {
+    keys.forEach(function(key) {
+      debug('loading api: %s, function: %s', api, key)
       self[api]['_' + key] = self[api][key];
 
       self[api][key] = function(options, fun_callback) {
         var cache_id = self.cacheId(api, key, options);
+        debug('api: %s, key: %s, id: %s, options: %j', api, key, cache_id, options)
 
         default_opts = lodash.merge({cache: true, validateCache: true}, lodash.pick(global_options, ['validateCache', 'cache']));
         options = lodash.merge(default_opts, options);
 
         self.getCache(cache_id, function(err, cached_etag, cached_data) {
+          debug('pre-options: %j', options)
+          debug('cached etag: %s', cached_etag)
           if (cached_etag && options.cache == true)
             options = lodash.merge({headers: {'If-None-Match': cached_etag}}, options);
 
+          debug('post-options: %j', options)
           if (options.validateCache == false && typeof(cached_data) != "undefined") {
             return fun_callback(null, cached_data);
           }
@@ -61,16 +66,9 @@ var GitHubCache = module.exports = function(global_options) {
               fun_callback(null, results);
             });
           });
-        })
+        });
       };
-
-      key_callback(null);
-    }, function(err) {
-      if (err) return api_callback(err);
-      api_callback();
-    })
-  }, function(err) {
-    if (err) throw Error(err);
+    });
   });
 
   this.config.cachedb = this.config.cachedb || './cachedb';
@@ -85,10 +83,25 @@ util.inherits(GitHubCache, GitHubApi);
 
 GitHubCache.prototype.getCache = function(cache_id, callback) {
   var self = this;
+  debug('getCache id: %s', cache_id)
   self.cachedb.get(cache_id + ':tag', function(err, tag) {
-    if (err) return callback(err);
+    debug('getCache id: %s, tag: %s', (cache_id + ':tag'), tag)
+    if (err && err.status == '404') {
+      return callback(null, false, false)
+    }
+    if (err) {
+      debug('getCache error1: %j', err)
+      return callback(err);
+    }
     self.cachedb.get(cache_id + ':data', function(err, data) {
-      if (err) return callback(err);
+      debug('getCache id: %s, data: %j', (cache_id + ':data'), data)
+      if (err && err.status == '404') {
+        return callback(null, false, false)
+      }
+      if (err) {
+        debug('getCache error1: %j', err)
+        return callback(err);
+      }
       callback(null, tag, JSON.parse(data));
     });
   });
@@ -96,13 +109,26 @@ GitHubCache.prototype.getCache = function(cache_id, callback) {
 
 GitHubCache.prototype.putCache = function(cache_id, cache_data, callback) {
   var self = this;
-  if (typeof(cache_data.meta.etag) == 'undefined')
+  debug('putCache id: %s', cache_id)
+  if (typeof(cache_data.meta.etag) == 'undefined') {
+    debug('putCache - missing etag data')
     return callback(null);
+  }
 
   self.cachedb.put(cache_id + ':tag', cache_data.meta.etag, function(err) {
-    if (err) return callback(err);
+    debug('putCache id: %s, tag: %s', (cache_id + ':tag'), cache_data.meta.etag)
+    if (err) {
+      debug('putCache id: %s, err: %j', (cache_id + ':tag'), err)
+      return callback(err);
+    }
+
     self.cachedb.put(cache_id + ':data', JSON.stringify(cache_data), function(err) {
-      if (err) return callback(err);
+      debug('putCache id: %s, data: %j', (cache_id + ':data'), cache_data)
+      if (err) {
+        debug('putCache id: %s, err: %j', (cache_id + ':data'), err)
+        return callback(err);
+      }
+
       callback(null);
     });
   });
@@ -144,9 +170,8 @@ GitHubCache.prototype.invalidateCache = function(invalidateOpts, options) {
 GitHubCache.prototype.cacheId = function(api, fun, options) {
   var self = this;
   var options_key = lodash.omit(options, ['validateCache', 'cache', 'invalidateCache', 'headers']);
-  debug('CACHEID api: %s, function: %s, options: %j', api, fun, options_key);
   var cache_id = util.format("%s:%s:%s", api, fun, crypto.createHash('sha1').update(JSON.stringify(options_key)).digest('hex'));
-  debug('CACHEID id: %s', cache_id);
+  debug('cacheId - api: %s, function: %s, options: %j, id: %s', api, fun, options_key, cache_id);
   return cache_id;
 };
 

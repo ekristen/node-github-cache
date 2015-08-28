@@ -131,8 +131,7 @@ test('non-default options', function(t) {
   }, function(err, data1) {
     t.ok(!err)
     t.equal(typeof data1.meta, 'object')
-
-    //rimraf(dbpath, t.end.bind(null))
+    rimraf(dbpath, t.end.bind(null))
   });
 });
 

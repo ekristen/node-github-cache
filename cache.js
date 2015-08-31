@@ -93,7 +93,7 @@ GitHubCache.prototype.getCache = function(cache_id, callback) {
   self.cachedb.get(cache_id + self.separator + 'tag', function(err, tag) {
     debug('getCache id: %s, tag: %s', (cache_id + self.separator + 'tag'), tag)
     if (err && err.status == '404') {
-      return callback(null, false, false)
+      return callback(null, false, undefined)
     }
     if (err) {
       debug('getCache error1: %j', err)
@@ -102,7 +102,7 @@ GitHubCache.prototype.getCache = function(cache_id, callback) {
     self.cachedb.get(cache_id + self.separator + 'data', function(err, data) {
       debug('getCache id: %s, data: %j', (cache_id + self.separator + 'data'), data)
       if (err && err.status == '404') {
-        return callback(null, false, false)
+        return callback(null, false, undefined)
       }
       if (err) {
         debug('getCache error1: %j', err)

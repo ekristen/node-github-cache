@@ -91,6 +91,7 @@ test('do not validate cache', function(t) {
 
   github.user.getFollowingFromUser({
     user: "ekristen",
+    validateCache: false
   }, function(err, data1) {
     t.ok(!err)
     t.equal(typeof data1.meta, 'object')

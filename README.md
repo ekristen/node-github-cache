@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/ekristen/node-github-cache.svg)](https://travis-ci.org/ekristen/node-github-cache) [![Dependency Status](https://david-dm.org/ekristen/node-github-cache.svg)](https://david-dm.org/ekristen/node-github-cache) [![devDependency Status](https://david-dm.org/ekristen/node-github-cache/dev-status.svg)](https://david-dm.org/ekristen/node-github-cache#info=devDependencies)
+[![Build Status](https://travis-ci.org/ekristen/node-github-cache.svg)](https://travis-ci.org/ekristen/node-github-cache) [![Dependency Status](https://david-dm.org/ekristen/node-github-cache.svg)](https://david-dm.org/ekristen/node-github-cache) [![devDependency Status](https://david-dm.org/ekristen/node-github-cache/dev-status.svg)](https://david-dm.org/ekristen/node-github-cache#info=devDependencies) [![npm version](https://badge.fury.io/js/github-cache.svg)](http://badge.fury.io/js/github-cache)
 
 # Caching Layer for Node-GitHub
 

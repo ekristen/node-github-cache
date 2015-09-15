@@ -1,6 +1,5 @@
 var crypto    = require('crypto');
 var GitHubApi = require('github');
-var leveldb   = require('level');
 var lodash    = require('lodash');
 var util      = require('util');
 var debug     = require('debug')('github-cache');
@@ -81,6 +80,8 @@ var GitHubCache = module.exports = function(global_options) {
   if (typeof(this.config.cachedb) == 'object' && typeof(this.config.cachedb.put) == 'function') {
     this.cachedb = this.config.cachedb;
   } else {
+    var leveldb = require('level');
+
     this.cachedb = leveldb(this.config.cachedb || './cachedb');
   }
 };

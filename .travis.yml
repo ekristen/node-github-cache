@@ -1,12 +1,11 @@
 language: node_js
 sudo: false
 node_js:
-- '3.0'
-- '2.2'
-- '0.12'
-- '0.10'
+- '4'
+- '5'
+- '6'
 script:
 - npm test
 env:
   global:
-    secure: HHF11GuED/dQsR+6UDPXHF2+IzqJGp6qsg8ldaorMmDs0oX8BReET/YytPpqjmAaFDRHjg2odoWFqO89/s7MxJh+WBfU6rHo1bX3WZrecvd3NOA89Ki9dAhYZzbkVVEdC6WSQb5ESsD1AIqJ0+2/659NMcNS5H9K5mKy7qIG4Z0=
+    secure: JtKD45Q9TBI14ISF0SFV2ZmEf72XHQiYN7/Dz5hcuS75WPdmnpXW0KXv4i8xopCQa1yVXWuJX/QWODB99aPusZ8TzNVhoeZ2wcvjFp2zwsvqqP/lfW31om2Qaz+vX9iq1c74tffcAly/pKdVELZWNjwxT6Fw2hZ84d1wLBUY2fk=

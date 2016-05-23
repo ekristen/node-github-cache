@@ -5,10 +5,7 @@
   "description": "Transparent caching layer for node-github module",
   "version": "1.1.0",
   "main": "./cache.js",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/ekristen/node-github-cache.git"
-  },
+  "repository": "ekristen/node-github-cache",
   "bugs": "https://github.com/ekristen/node-github-cache/issues",
   "license": "MIT",
   "keywords": [
@@ -17,16 +14,19 @@
     "leveldb"
   ],
   "scripts": {
-    "test": "node test.js"
+    "test": "npm run test:standard && npm run test:code",
+    "test:standard": "standard *.js",
+    "test:code": "node test.js"
   },
   "dependencies": {
     "debug": "^2.2.0",
     "github": "^0.2.4",
-    "level": "^1.3.0",
-    "lodash": "^3.10.1"
+    "level": "^1.4.0",
+    "lodash": "^4.13.0"
   },
   "devDependencies": {
-    "rimraf": "^2.4.2",
-    "tape": "^4.2.0"
+    "rimraf": "^2.5.2",
+    "standard": "^7.1.0",
+    "tape": "^4.5.1"
   }
 }

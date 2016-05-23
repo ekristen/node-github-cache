@@ -6,6 +6,8 @@ This is a Node.JS module that transparently adds caching for the [node-github](h
 
 Using the default leveldb for caching works completely. Consul Key/Value storage has been tested a little and seems to work just fine.
 
+[![NPM](https://nodei.co/npm/github-cache.png?downloads=true&downloadRank=true&stars=true)](https://nodei.co/npm/github-cache/)
+
 ## Installation
 
 Install with Node.JS package manager

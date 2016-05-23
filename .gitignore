@@ -2,3 +2,4 @@ node_modules
 *db
 .env
 *.log
+testcachedb*

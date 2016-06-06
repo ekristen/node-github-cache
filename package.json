@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "debug": "^2.2.0",
-    "github": "^0.2.4",
+    "github": "^1.1.1",
     "level": "^1.4.0",
     "lodash": "^4.13.0"
   },

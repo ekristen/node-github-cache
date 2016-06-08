@@ -15,13 +15,13 @@ test('cache', function (t) {
     token: process.env.GHTOKEN
   })
 
-  github.user.getFollowingFromUser({
+  github.users.getFollowingForUser({
     user: 'ekristen'
   }, function (err, data1) {
     t.error(err)
     t.equal(typeof data1.meta, 'object')
 
-    github.user.getFollowingFromUser({
+    github.users.getFollowingForUser({
       user: 'ekristen'
     }, function (err, data2) {
       t.error(err)
@@ -44,7 +44,7 @@ test('do not cache', function (t) {
     token: process.env.GHTOKEN
   })
 
-  github.user.getFollowingFromUser({
+  github.users.getFollowingForUser({
     user: 'ekristen',
     cache: false
   }, function (err, data1) {
@@ -54,7 +54,7 @@ test('do not cache', function (t) {
     var r1 = data1.meta['x-ratelimit-remaining']
     delete data1.meta
 
-    github.user.getFollowingFromUser({
+    github.users.getFollowingForUser({
       user: 'ekristen',
       cache: false
     }, function (err, data2) {
@@ -84,7 +84,7 @@ test('do not validate cache', function (t) {
     token: process.env.GHTOKEN
   })
 
-  github.user.getFollowingFromUser({
+  github.users.getFollowingForUser({
     user: 'ekristen',
     validateCache: false
   }, function (err, data1) {
@@ -93,7 +93,7 @@ test('do not validate cache', function (t) {
 
     delete data1.meta
 
-    github.user.getFollowingFromUser({
+    github.users.getFollowingForUser({
       user: 'ekristen',
       validateCache: false
     }, function (err, data2) {
@@ -120,7 +120,7 @@ test('non-default options', function (t) {
     token: process.env.GHTOKEN
   })
 
-  github.user.getFollowingFromUser({
+  github.users.getFollowingForUser({
     user: 'ekristen'
   }, function (err, data1) {
     t.error(err)

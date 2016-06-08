@@ -17,7 +17,7 @@ var GitHubApi = require('github')
 function GitHubCache (globalOptions) {
   GitHubCache.super_.call(this, globalOptions)
 
-  var apis = Object.keys(this[this.version].routes)
+  var apis = Object.keys(this.routes)
 
   var self = this
   self.prefix = globalOptions.prefix || ''

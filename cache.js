@@ -47,7 +47,7 @@ function GitHubCache (globalOptions) {
           debug('pre-options: %j', options)
           debug('cached etag: %s', cachedEtag)
 
-          if (err && !err.notFound) {
+          if (err && (!err.notFound && err.status !== 404)) {
             debug('getCache error: %j', err)
             return funCallback(err)
           }

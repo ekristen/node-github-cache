@@ -19,13 +19,13 @@ test('cache', function (t) {
     user: 'ekristen'
   }, function (err, data1) {
     t.error(err)
-    t.equal(typeof data1.meta, 'object')
+    t.equal(data1.meta.status, '200 OK')
 
     github.users.getFollowingForUser({
       user: 'ekristen'
     }, function (err, data2) {
       t.error(err)
-      t.equal(typeof data2.meta, 'undefined')
+      t.equal(data2.meta.status, '304 Not Modified')
       rimraf(dbpath, t.end.bind(null))
     })
   })
@@ -89,7 +89,8 @@ test('do not validate cache', function (t) {
     validateCache: false
   }, function (err, data1) {
     t.error(err)
-    t.equal(typeof data1.meta, 'object')
+    var etag = data1.meta.etag
+    t.equal(data1.meta.status, '200 OK')
 
     delete data1.meta
 
@@ -98,7 +99,8 @@ test('do not validate cache', function (t) {
       validateCache: false
     }, function (err, data2) {
       t.error(err)
-      t.equal(typeof data2.meta, 'undefined')
+      t.equal(data2.meta.status, '304 Not Modified')
+      t.equal(etag, data2.meta.etag)
 
       rimraf(dbpath, t.end.bind(null))
     })
@@ -124,7 +126,7 @@ test('non-default options', function (t) {
     user: 'ekristen'
   }, function (err, data1) {
     t.error(err)
-    t.equal(typeof data1.meta, 'object')
+    t.equal(data1.meta.status, '200 OK')
     rimraf(dbpath, t.end.bind(null))
   })
 })

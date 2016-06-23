@@ -108,32 +108,61 @@ util.inherits(GitHubCache, GitHubApi)
 GitHubCache.prototype.getCache = function (cacheId, callback) {
   var self = this
   debug('getCache id: %s', cacheId)
+
   self.cachedb.get(cacheId + self.separator + 'tag', function (err, tag) {
     debug('getCache id: %s, tag: %s', (cacheId + self.separator + 'tag'), tag)
     if (err && err.status === '404') {
       return callback(null, false, undefined)
     }
+
     if (err) {
-      debug('getCache error1: %j', err)
+      debug('getCache tag error: %j', err)
       return callback(err)
     }
-    self.cachedb.get(cacheId + self.separator + 'data', function (err, data) {
-      debug('getCache id: %s, data: %j', (cacheId + self.separator + 'data'), data)
+
+    self.cachedb.get(cacheId + self.separator + 'meta', function (err, meta) {
+      debug('getCache id: %s, meta: %j', (cacheId + self.separator + 'meta'), meta)
       if (err && err.status === '404') {
         return callback(null, false, undefined)
       }
 
       if (err) {
-        debug('getCache error1: %j', err)
+        debug('getCache meta error: %j', err)
         return callback(err)
       }
 
-      var d = {}
+      var metaData = {}
       try {
-        d = JSON.parse(data)
-      } catch (e) {}
+        metaData = JSON.parse(meta)
+      } catch (e) {
+        debug('getCache meta json parse error: %j', err)
+        return callback(e)
+      }
 
-      callback(null, tag, d)
+      self.cachedb.get(cacheId + self.separator + 'data', function (err, data) {
+        debug('getCache id: %s, data: %j', (cacheId + self.separator + 'data'), data)
+        if (err && err.status === '404') {
+          return callback(null, false, undefined)
+        }
+
+        if (err) {
+          debug('getCache error1: %j', err)
+          return callback(err)
+        }
+
+        var d = {}
+        try {
+          d = JSON.parse(data)
+        } catch (e) {
+          debug('getCache data parse error: %j', err)
+          return callback(e)
+        }
+
+        d.meta = lodash.pick(metaData, ['link', 'etag', 'status'])
+        d.meta.status = '304 Not Modified'
+
+        callback(null, tag, d)
+      })
     })
   })
 }
@@ -147,22 +176,35 @@ GitHubCache.prototype.putCache = function (cacheId, cachedData, callback) {
     return callback(null)
   }
 
-  self.cachedb.put(cacheId + self.separator + 'tag', cachedData.meta.etag, function (err) {
-    debug('putCache id: %s, tag: %s', (cacheId + self.separator + 'tag'), cachedData.meta.etag)
-    if (err) {
-      debug('putCache id: %s, err: %j', (cacheId + self.separator + 'tag'), err)
-      return callback(err)
+  var ops = [
+    {
+      type: 'put',
+      key: cacheId + self.separator + 'tag',
+      value: cachedData.meta.etag
+    },
+    {
+      type: 'put',
+      key: cacheId + self.separator + 'meta',
+      value: JSON.stringify(cachedData.meta)
+    },
+    {
+      type: 'put',
+      key: cacheId + self.separator + 'data',
+      value: JSON.stringify(cachedData)
     }
+  ]
 
-    self.cachedb.put(cacheId + self.separator + 'data', JSON.stringify(cachedData), function (err) {
-      debug('putCache id: %s, data: %j', (cacheId + self.separator + 'data'), cachedData)
+  debug('putCache ops: %j', ops)
+
+  self.cachedb.batch(ops, function (err) {
+    if (err) {
       if (err) {
-        debug('putCache id: %s, err: %j', (cacheId + self.separator + 'data'), err)
+        debug('putCache - err: %j', err)
         return callback(err)
       }
+    }
 
-      callback(null)
-    })
+    callback(null)
   })
 }
 

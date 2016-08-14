@@ -1,30 +1,38 @@
 var test = require('tape')
 var rimraf = require('rimraf')
-var GitHubAPI = require('./cache.js')
+var MemDB = require('memdb')
+var GitHubCache = require('./cache.js')
+var GitHubAPI = require('github')
+
+var githubapi = new GitHubAPI({
+  version: '3.0.0'
+})
+
+githubapi.authenticate({
+  type: 'oauth',
+  token: process.env.GHTOKEN
+})
 
 test('cache', function (t) {
   var dbpath = './testcachedb' + new Date().getTime()
+  var dburi = 'level://localhost/' + dbpath
 
-  var github = new GitHubAPI({
-    version: '3.0.0',
-    cachedb: dbpath
-  })
-
-  github.authenticate({
-    type: 'oauth',
-    token: process.env.GHTOKEN
+  var github = new GitHubCache(githubapi, {
+    cachedb: {
+      uri: dburi
+    }
   })
 
   github.users.getFollowingForUser({
     user: 'ekristen'
   }, function (err, data1) {
-    t.error(err)
+    t.error(err, 'there should be no error')
     t.equal(data1.meta.status, '200 OK')
 
     github.users.getFollowingForUser({
       user: 'ekristen'
     }, function (err, data2) {
-      t.error(err)
+      t.error(err, 'there should be no error')
       t.equal(data2.meta.status, '304 Not Modified')
       rimraf(dbpath, t.end.bind(null))
     })
@@ -33,15 +41,12 @@ test('cache', function (t) {
 
 test('do not cache', function (t) {
   var dbpath = './testcachedb' + new Date().getTime()
+  var dburi = 'level://localhost/' + dbpath
 
-  var github = new GitHubAPI({
-    version: '3.0.0',
-    cachedb: dbpath
-  })
-
-  github.authenticate({
-    type: 'oauth',
-    token: process.env.GHTOKEN
+  var github = new GitHubCache(githubapi, {
+    cachedb: {
+      uri: dburi
+    }
   })
 
   github.users.getFollowingForUser({
@@ -73,15 +78,12 @@ test('do not cache', function (t) {
 
 test('do not validate cache', function (t) {
   var dbpath = './testcachedb' + new Date().getTime()
+  var dburi = 'level://localhost/' + dbpath
 
-  var github = new GitHubAPI({
-    version: '3.0.0',
-    cachedb: dbpath
-  })
-
-  github.authenticate({
-    type: 'oauth',
-    token: process.env.GHTOKEN
+  var github = new GitHubCache(githubapi, {
+    cachedb: {
+      uri: dburi
+    }
   })
 
   github.users.getFollowingForUser({
@@ -109,17 +111,14 @@ test('do not validate cache', function (t) {
 
 test('non-default options', function (t) {
   var dbpath = './testcachedb' + new Date().getTime()
+  var dburi = 'level://localhost/' + dbpath
 
-  var github = new GitHubAPI({
-    version: '3.0.0',
-    cachedb: dbpath,
+  var github = new GitHubCache(githubapi, {
+    cachedb: {
+      uri: dburi
+    },
     prefix: 'cache',
-    separator: '/'
-  })
-
-  github.authenticate({
-    type: 'oauth',
-    token: process.env.GHTOKEN
+    separator: ':'
   })
 
   github.users.getFollowingForUser({
@@ -128,5 +127,31 @@ test('non-default options', function (t) {
     t.error(err)
     t.equal(data1.meta.status, '200 OK')
     rimraf(dbpath, t.end.bind(null))
+  })
+})
+
+test('custom cache instance using MemDB', function (t) {
+  var github = new GitHubCache(githubapi, {
+    cachedb: MemDB()
+  })
+
+  github.users.getFollowingForUser({
+    user: 'ekristen'
+  }, function (err, data1) {
+    t.error(err, 'should not error')
+    var etag = data1.meta.etag
+    t.equal(data1.meta.status, '200 OK')
+
+    delete data1.meta
+
+    github.users.getFollowingForUser({
+      user: 'ekristen'
+    }, function (err, data2) {
+      t.error(err, 'should not error')
+      t.equal(data2.meta.status, '304 Not Modified')
+      t.equal(etag, data2.meta.etag)
+
+      t.end()
+    })
   })
 })

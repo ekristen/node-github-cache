@@ -1,46 +1,75 @@
+var url = require('url')
 var util = require('util')
 var crypto = require('crypto')
 
 var debug = require('debug')('github-cache')
 var lodash = require('lodash')
-var GitHubApi = require('github')
+var libkv = require('libkv')
 
-/**
- * Copyright 2014
- * Author: Erik Kristensen <erik@erikkristensen.com>
- *
- * GitHubCache is a transparent caching layer for node-github.
- * It overloads all API functions and introduces a caching mechanism.
- * You can call all the original functions by using an underscore in
- * front of their original function name.
- */
-function GitHubCache (globalOptions) {
-  GitHubCache.super_.call(this, globalOptions)
-
-  var apis = Object.keys(this.routes)
-
-  var self = this
-  self.prefix = globalOptions.prefix || ''
-  self.separator = globalOptions.separator || ':'
-
-  if (self.prefix !== '') {
-    self.prefix += self.separator
+function GitHubCache (GitHubAPI, options) {
+  if (!(this instanceof GitHubCache)) {
+    return new GitHubCache(GitHubAPI, options)
   }
 
+  this.options = lodash.extend({
+    prefix: '',
+    separator: '/',
+    cachedb: {
+      uri: 'level:///./github-cachedb',
+      valueOnly: true
+    }
+  }, options)
+
+  this.api = GitHubAPI
+  this.prefix = this.options.prefix
+  this.separator = this.options.separator
+
+  if (this.prefix !== '') {
+    this.prefix += this.separator
+  }
+
+  this._validateGitHubAPI()
+  this._setupApis()
+  this._setupCacheDb()
+
+  return this
+}
+module.exports = GitHubCache
+
+GitHubCache.prototype._validateGitHubAPI = function GitHubCacheValidateGitHubAPI () {
+  if (typeof this.api.config === 'undefined') {
+    throw new Error('GitHubAPI does not appear to be valid')
+  }
+  if (typeof this.api.routes === 'undefined') {
+    throw new Error('GitHubAPI does not appear to be valid')
+  }
+}
+
+GitHubCache.prototype._setupApis = function GitHubCacheSetupAPIS () {
+  var self = this
+
+  var apis = Object.keys(self.api.routes)
   apis.forEach(function (api) {
     api = toCamelCase(api)
     debug('loading api: %s', api)
-    var keys = Object.keys(self[api])
+    var keys = Object.keys(self.api[api])
+
+    if (typeof self[api] === 'undefined') {
+      self[api] = {}
+    }
 
     keys.forEach(function (key) {
       debug('loading api: %s, function: %s', api, key)
-      self[api]['_' + key] = self[api][key]
+      // self[api]['_' + key] = self[api][key]
 
       self[api][key] = function (options, funCallback) {
         var cacheId = self.cacheId(api, key, options)
         debug('api: %s, key: %s, id: %s, options: %j', api, key, cacheId, options)
 
-        var defaultOpts = lodash.merge({cache: true, validateCache: true}, lodash.pick(globalOptions, ['validateCache', 'cache']))
+        var defaultOpts = lodash.merge({
+          cache: true,
+          validateCache: true
+        }, lodash.pick(self.options, ['validateCache', 'cache']))
         options = lodash.merge(defaultOpts, options)
 
         self.getCache(cacheId, function (err, cachedEtag, cachedData) {
@@ -62,7 +91,7 @@ function GitHubCache (globalOptions) {
           }
 
           var opts = lodash.omit(options, ['cache', 'validateCache', 'invalidateCache'])
-          self[api]['_' + key](opts, function (err, results) {
+          self.api[api][key](opts, function (err, results) {
             if (err) {
               return funCallback(err)
             }
@@ -91,21 +120,42 @@ function GitHubCache (globalOptions) {
       }
     })
   })
+}
 
-  this.config.cachedb = this.config.cachedb || './cachedb'
-  if (typeof this.config.cachedb === 'object' && typeof this.config.cachedb.put === 'function') {
-    this.cachedb = this.config.cachedb
-  } else {
-    var leveldb = require('level')
+GitHubCache.prototype._setupCacheDb = function GitHubCacheSetupCacheDB () {
+  var uri = null
+  if (typeof this.options.cachedb === 'string') {
+    // We assume using libkv?
+    uri = url.parse(this.options.cachedb)
+    this.cachedb = libkv(uri.protocol.replace(/:/, ''), {
+      uri: this.options.cachedb,
+      valueOnly: true
+    })
+  } else if (typeof this.options.cachedb === 'object') {
+    if (typeof this.options.cachedb.uri === 'string') {
+      // Assume uri with options
+      uri = url.parse(this.options.cachedb.uri)
+      this.cachedb = libkv(uri.protocol.replace(/:/, ''), lodash.extend(this.options.cachedb, { valueOnly: true }))
+    } else {
+      if (typeof this.options.cachedb.put !== 'function') {
+        throw new Error('Cache does not have the function PUT')
+      }
+      if (typeof this.options.cachedb.get !== 'function') {
+        throw new Error('Cache does not have the function GET')
+      }
+      if (typeof this.options.cachedb.del !== 'function') {
+        throw new Error('Cache does not have the function DEL')
+      }
+      if (typeof this.options.cachedb.batch !== 'function') {
+        throw new Error('Cache does not have the function BATCH')
+      }
 
-    this.cachedb = leveldb(this.config.cachedb || './cachedb')
+      this.cachedb = this.options.cachedb
+    }
   }
 }
-module.exports = GitHubCache
 
-util.inherits(GitHubCache, GitHubApi)
-
-GitHubCache.prototype.getCache = function (cacheId, callback) {
+GitHubCache.prototype.getCache = function GitHubCacheGetCache (cacheId, callback) {
   var self = this
   debug('getCache id: %s', cacheId)
 
@@ -167,7 +217,7 @@ GitHubCache.prototype.getCache = function (cacheId, callback) {
   })
 }
 
-GitHubCache.prototype.putCache = function (cacheId, cachedData, callback) {
+GitHubCache.prototype.putCache = function GitHubCachePutCache (cacheId, cachedData, callback) {
   var self = this
 
   debug('putCache id: %s', cacheId)
@@ -208,7 +258,7 @@ GitHubCache.prototype.putCache = function (cacheId, cachedData, callback) {
   })
 }
 
-GitHubCache.prototype.invalidateCache = function (invalidateOpts, options) {
+GitHubCache.prototype.invalidateCache = function GitHubCacheInvalidateCache (invalidateOpts, options) {
   var self = this
   var invalid = false
 
@@ -245,10 +295,11 @@ GitHubCache.prototype.invalidateCache = function (invalidateOpts, options) {
   })
 }
 
-GitHubCache.prototype.cacheId = function (api, fun, options) {
+GitHubCache.prototype.cacheId = function GitHubCacheCacheID (api, fun, options) {
   var self = this
   var optionsKey = lodash.omit(options, ['validateCache', 'cache', 'invalidateCache', 'headers'])
-  var cacheId = util.format('%s%s%s%s%s%s', self.prefix, api, self.separator, fun, self.separator, crypto.createHash('sha1').update(JSON.stringify(optionsKey)).digest('hex'))
+  var hash = crypto.createHash('sha1').update(JSON.stringify(optionsKey)).digest('hex')
+  var cacheId = util.format('%s%s%s%s%s%s', self.prefix, api, self.separator, fun, self.separator, hash)
   debug('cacheId - api: %s, function: %s, options: %j, id: %s', api, fun, optionsKey, cacheId)
   return cacheId
 }

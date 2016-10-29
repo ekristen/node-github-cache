@@ -24,13 +24,13 @@ test('cache', function (t) {
   })
 
   github.users.getFollowingForUser({
-    user: 'ekristen'
+    username: 'ekristen'
   }, function (err, data1) {
     t.error(err, 'there should be no error')
     t.equal(data1.meta.status, '200 OK')
 
     github.users.getFollowingForUser({
-      user: 'ekristen'
+      username: 'ekristen'
     }, function (err, data2) {
       t.error(err, 'there should be no error')
       t.equal(data2.meta.status, '304 Not Modified')
@@ -50,7 +50,7 @@ test('do not cache', function (t) {
   })
 
   github.users.getFollowingForUser({
-    user: 'ekristen',
+    username: 'ekristen',
     cache: false
   }, function (err, data1) {
     t.error(err)
@@ -60,7 +60,7 @@ test('do not cache', function (t) {
     delete data1.meta
 
     github.users.getFollowingForUser({
-      user: 'ekristen',
+      username: 'ekristen',
       cache: false
     }, function (err, data2) {
       t.error(err)
@@ -87,7 +87,7 @@ test('do not validate cache', function (t) {
   })
 
   github.users.getFollowingForUser({
-    user: 'ekristen',
+    username: 'ekristen',
     validateCache: false
   }, function (err, data1) {
     t.error(err)
@@ -97,7 +97,7 @@ test('do not validate cache', function (t) {
     delete data1.meta
 
     github.users.getFollowingForUser({
-      user: 'ekristen',
+      username: 'ekristen',
       validateCache: false
     }, function (err, data2) {
       t.error(err)
@@ -122,7 +122,7 @@ test('non-default options', function (t) {
   })
 
   github.users.getFollowingForUser({
-    user: 'ekristen'
+    username: 'ekristen'
   }, function (err, data1) {
     t.error(err)
     t.equal(data1.meta.status, '200 OK')
@@ -136,7 +136,7 @@ test('custom cache instance using MemDB', function (t) {
   })
 
   github.users.getFollowingForUser({
-    user: 'ekristen'
+    username: 'ekristen'
   }, function (err, data1) {
     t.error(err, 'should not error')
     var etag = data1.meta.etag
@@ -145,7 +145,7 @@ test('custom cache instance using MemDB', function (t) {
     delete data1.meta
 
     github.users.getFollowingForUser({
-      user: 'ekristen'
+      username: 'ekristen'
     }, function (err, data2) {
       t.error(err, 'should not error')
       t.equal(data2.meta.status, '304 Not Modified')

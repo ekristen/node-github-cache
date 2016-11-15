@@ -5,6 +5,7 @@ var crypto = require('crypto')
 var debug = require('debug')('github-cache')
 var lodash = require('lodash')
 var libkv = require('libkv')
+var async = require('async')
 
 function GitHubCache (GitHubAPI, options) {
   if (!(this instanceof GitHubCache)) {
@@ -146,9 +147,6 @@ GitHubCache.prototype._setupCacheDb = function GitHubCacheSetupCacheDB () {
       if (typeof this.options.cachedb.del !== 'function') {
         throw new Error('Cache does not have the function DEL')
       }
-      if (typeof this.options.cachedb.batch !== 'function') {
-        throw new Error('Cache does not have the function BATCH')
-      }
 
       this.cachedb = this.options.cachedb
     }
@@ -246,15 +244,15 @@ GitHubCache.prototype.putCache = function GitHubCachePutCache (cacheId, cachedDa
 
   debug('putCache ops: %j', ops)
 
-  self.cachedb.batch(ops, function (err) {
+  async.eachSeries(ops, function (op, cb) {
+    self.cachedb[op.type](op.key, op.value, cb)
+  }, function (err) {
     if (err) {
-      if (err) {
-        debug('putCache - err: %j', err)
-        return callback(err)
-      }
+      debug('putCache - err: %j', err)
+      return callback(err)
     }
 
-    callback(null)
+    callback()
   })
 }
 
@@ -288,9 +286,11 @@ GitHubCache.prototype.invalidateCache = function GitHubCacheInvalidateCache (inv
     { type: 'del', key: self.prefix + cacheId + self.separator + 'data' }
   ]
 
-  self.cachedb.batch(ops, function (err) {
+  async.eachSeries(ops, function (op, cb) {
+    self.cachedb[op.type](op.key, cb)
+  }, function (err) {
     if (err) {
-      debug('Error Invaliding Cache: %s', err)
+      debug('error invalidating cache: %s', err)
     }
   })
 }

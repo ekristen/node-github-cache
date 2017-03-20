@@ -2,6 +2,8 @@
 
 # Caching Layer for Node-GitHub
 
+[![Greenkeeper badge](https://badges.greenkeeper.io/ekristen/node-github-cache.svg)](https://greenkeeper.io/)
+
 This is a Node.JS module that transparently adds caching for the [node-github](https://github.com/mikedeboer/node-github) project. This library makes use of [node-libkv](https://github.com/ekristen/node-libkv) for providing a consistent API layer for multiple different key/value storage backends.
 
 By default if no `cachedb` is setup, a local leveldb instance will be created. 

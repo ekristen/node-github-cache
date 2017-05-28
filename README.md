@@ -1,8 +1,6 @@
-[![Build Status](https://travis-ci.org/ekristen/node-github-cache.svg)](https://travis-ci.org/ekristen/node-github-cache) [![Dependency Status](https://david-dm.org/ekristen/node-github-cache.svg)](https://david-dm.org/ekristen/node-github-cache) [![devDependency Status](https://david-dm.org/ekristen/node-github-cache/dev-status.svg)](https://david-dm.org/ekristen/node-github-cache#info=devDependencies) [![npm version](https://badge.fury.io/js/github-cache.svg)](http://badge.fury.io/js/github-cache)
+[![Build Status](https://travis-ci.org/ekristen/node-github-cache.svg)](https://travis-ci.org/ekristen/node-github-cache) [![Dependency Status](https://david-dm.org/ekristen/node-github-cache.svg)](https://david-dm.org/ekristen/node-github-cache) [![devDependency Status](https://david-dm.org/ekristen/node-github-cache/dev-status.svg)](https://david-dm.org/ekristen/node-github-cache#info=devDependencies) [![npm version](https://badge.fury.io/js/github-cache.svg)](http://badge.fury.io/js/github-cache) [![Greenkeeper badge](https://badges.greenkeeper.io/ekristen/node-github-cache.svg)](https://greenkeeper.io/)
 
 # Caching Layer for Node-GitHub
-
-[![Greenkeeper badge](https://badges.greenkeeper.io/ekristen/node-github-cache.svg)](https://greenkeeper.io/)
 
 This is a Node.JS module that transparently adds caching for the [node-github](https://github.com/mikedeboer/node-github) project. This library makes use of [node-libkv](https://github.com/ekristen/node-libkv) for providing a consistent API layer for multiple different key/value storage backends.
 

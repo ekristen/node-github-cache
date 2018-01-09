@@ -41,15 +41,15 @@ GitHubCache.prototype._validateGitHubAPI = function GitHubCacheValidateGitHubAPI
   if (typeof this.api.config === 'undefined') {
     throw new Error('GitHubAPI does not appear to be valid')
   }
-  if (typeof this.api.routes === 'undefined') {
-    throw new Error('GitHubAPI does not appear to be valid')
-  }
 }
 
 GitHubCache.prototype._setupApis = function GitHubCacheSetupAPIS () {
   var self = this
 
-  var apis = Object.keys(self.api.routes)
+  self.authenticate = function (auth) { this.api.authenticate(auth) }
+
+  var routes = this.api.routes || require('github/lib/routes.json')
+  var apis = Object.keys(routes)
   apis.forEach(function (api) {
     api = toCamelCase(api)
     debug('loading api: %s', api)
@@ -64,6 +64,19 @@ GitHubCache.prototype._setupApis = function GitHubCacheSetupAPIS () {
       // self[api]['_' + key] = self[api][key]
 
       self[api][key] = function (options, funCallback) {
+        var promise
+        if (funCallback === undefined) {
+          promise = new Promise(function (resolve, reject) {
+            funCallback = function (err, data) {
+              if (err) {
+                reject(err)
+              } else {
+                resolve(data)
+              }
+            }
+          })
+        }
+
         var cacheId = self.cacheId(api, key, options)
         debug('api: %s, key: %s, id: %s, options: %j', api, key, cacheId, options)
 
@@ -93,7 +106,10 @@ GitHubCache.prototype._setupApis = function GitHubCacheSetupAPIS () {
 
           var opts = lodash.omit(options, ['cache', 'validateCache', 'invalidateCache'])
           self.api[api][key](opts, function (err, results) {
-            if (err) {
+            var notModified = (err && err.code === 304) ||
+              (results && results.meta.status === '304 Not Modified')
+
+            if (err && !notModified) {
               return funCallback(err)
             }
 
@@ -105,7 +121,7 @@ GitHubCache.prototype._setupApis = function GitHubCacheSetupAPIS () {
               return funCallback(null, results)
             }
 
-            if (results.meta.status === '304 Not Modified') {
+            if (notModified) {
               return funCallback(null, cachedData)
             }
 
@@ -118,6 +134,7 @@ GitHubCache.prototype._setupApis = function GitHubCacheSetupAPIS () {
             })
           })
         })
+        return promise
       }
     })
   })

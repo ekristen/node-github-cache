@@ -155,3 +155,28 @@ test('custom cache instance using MemDB', function (t) {
     })
   })
 })
+
+test('promise support', function (t) {
+  var dbpath = './testcachedb' + new Date().getTime()
+  var dburi = 'level://localhost/' + dbpath
+
+  var github = new GitHubCache(githubapi, {
+    cachedb: {
+      uri: dburi
+    }
+  })
+
+  var promise = github.users.getFollowingForUser({
+    username: 'ekristen'
+  }, function (err, data) {
+    t.equal(promise, undefined, 'should not return promise when callback is provided')
+    
+    promise = github.users.getFollowingForUser({
+      username: 'ekristen'
+    }).then(function (data) {
+      rimraf(dbpath, t.end.bind(null))
+    })
+
+    t.ok(promise instanceof Promise, 'should return promise when callback is not provided')
+  })
+})

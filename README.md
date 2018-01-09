@@ -10,6 +10,13 @@ By default if no `cachedb` is setup, a local leveldb instance will be created.
 
 ## Changelog
 
+### 2.2.0
+
+Thank you to @jdanyow, he put together the PR and commits to make this possible.
+
+* You can use callbacks or promises just like you can with node-github.
+* You can use just about ANY version of node-github with this now too, however you must use 0.13.1 if you are going to use 0.13.x branch, as 0.13.1 has a fix to expose 304 http error codes.
+
 ### 2.0.0
 
 * `github` is no longer a dependency of `github-cache`, this should allow this library to work with whatever version of `github` you need to work with now.

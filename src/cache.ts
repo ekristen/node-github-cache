@@ -41,7 +41,7 @@ export class OctokitCache {
   private prefix: string;
   private separator: string;
 
-  constructor(cache: Cache, options: Options = { prefix: undefined, separator: '/'}) {
+  constructor(cache: Cache, options: Options = { prefix: 'cache', separator: ':'}) {
     this.prefix = options.prefix;
     this.separator = options.separator;
 

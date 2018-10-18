@@ -1,5 +1,5 @@
 import Logger = require('bunyan');
-import * as lodash from 'lodash';
+import { cloneDeep, omit } from 'lodash';
 import * as objectHash from 'object-hash';
 
 interface Options {
@@ -66,7 +66,10 @@ export class OctokitCache {
   }
 
   public hashIt(options): string {
-    const hash = objectHash(lodash.omit(options, ['headers']));
+    const opts = omit(cloneDeep(options), ['headers', 'request']);
+    opts.url = opts.url.replace(/access_token=[a-z0-9]{40}/ig, '').replace(/\?$/ig, '');
+
+    const hash = objectHash(opts);
     this.trace({hash}, 'hashIt');
     return hash;
   }

@@ -114,6 +114,136 @@ describe('OctokitCache - caching', () => {
   });
 });
 
+if (process.env.GITHUB_TOKEN) {
+  describe('OctokitCache - caching w/ oauth2 authentication', () => {
+    const cache = new OctokitCache(new MemoryCache(), options);
+    const octokit = new Octokit() as any;
+    octokit.plugin(OctokitPlugin(cache))
+
+    octokit.authenticate({
+      type: 'oauth',
+      token: process.env.GITHUB_TOKEN,
+    });
+
+    let rateLimitStart = 0;
+
+    it('does not return cached data on first call', async () => {
+      await octokit.users.getFollowingForUser({
+        username: 'ekristen',
+      }).then(({data, headers, status}) => {
+        rateLimitStart = headers['x-ratelimit-remaining'];
+        expect(status).to.be.equal(200);
+      });
+    });
+
+    it('does return cached data on second call', async () => {
+      await octokit.users.getFollowingForUser({
+        username: 'ekristen',
+      }).then(({data, headers, status}) => {
+        expect(status).to.be.equal(304);
+      });
+    });
+
+    it('does return cached data on third call', async () => {
+      await octokit.users.getFollowingForUser({
+        username: 'ekristen',
+      }).then(({data, headers, status}) => {
+        expect(status).to.be.equal(304);
+      });
+    });
+  
+    it('does return cached data on fourth call', async () => {
+      await octokit.users.getFollowingForUser({
+        username: 'ekristen',
+      }).then(({data, headers, status}) => {
+        expect(status).to.be.equal(304);
+      });
+    });
+
+    it('does return cached data on fifth call', async () => {
+      await octokit.users.getFollowingForUser({
+        username: 'ekristen',
+      }).then(({data, headers, status}) => {
+        expect(status).to.be.equal(304);
+      });
+    });
+
+    it('does return cached data on six call', async () => {
+      await octokit.users.getFollowingForUser({
+        username: 'ekristen',
+      }).then(({data, headers, status}) => {
+        expect(rateLimitStart).to.be.equal(rateLimitStart);
+        expect(status).to.be.equal(304);
+      });
+    });
+  });
+}
+
+if (process.env.GITHUB_TOKEN) {
+  describe('OctokitCache - caching w/ token authentication', () => {
+    const cache = new OctokitCache(new MemoryCache(), options);
+    const octokit = new Octokit() as any;
+    octokit.plugin(OctokitPlugin(cache))
+
+    octokit.authenticate({
+      type: 'token',
+      token: process.env.GITHUB_TOKEN,
+    });
+
+    let rateLimitStart = 0;
+
+    it('does not return cached data on first call', async () => {
+      await octokit.users.getFollowingForUser({
+        username: 'ekristen',
+      }).then(({data, headers, status}) => {
+        rateLimitStart = headers['x-ratelimit-remaining'];
+        expect(status).to.be.equal(200);
+      });
+    });
+
+    it('does return cached data on second call', async () => {
+      await octokit.users.getFollowingForUser({
+        username: 'ekristen',
+      }).then(({data, headers, status}) => {
+        expect(status).to.be.equal(304);
+      });
+    });
+
+    it('does return cached data on third call', async () => {
+      await octokit.users.getFollowingForUser({
+        username: 'ekristen',
+      }).then(({data, headers, status}) => {
+        expect(status).to.be.equal(304);
+      });
+    });
+  
+    it('does return cached data on fourth call', async () => {
+      await octokit.users.getFollowingForUser({
+        username: 'ekristen',
+      }).then(({data, headers, status}) => {
+        expect(status).to.be.equal(304);
+      });
+    });
+
+    it('does return cached data on fifth call', async () => {
+      await octokit.users.getFollowingForUser({
+        username: 'ekristen',
+      }).then(({data, headers, status}) => {
+        expect(status).to.be.equal(304);
+      });
+    });
+
+    it('does return cached data on six call', async () => {
+      await octokit.users.getFollowingForUser({
+        username: 'ekristen',
+      }).then(({data, headers, status}) => {
+        expect(rateLimitStart).to.be.equal(rateLimitStart);
+        expect(status).to.be.equal(304);
+      });
+    });
+  });
+}
+
 describe('OctokitCache - logging', () => {
   let loggerCallCount: number = 0;
   let loggerMessages: string[] = [];

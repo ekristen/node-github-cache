@@ -49,10 +49,11 @@ export const OctokitPlugin = (cache: OctokitCache, logger: Logger | null = null)
 
 export class OctokitCache {
   public cache;
+  private logger;
   private prefix: string;
   private separator: string;
 
-  constructor(cache: Cache, options: Options = { prefix: 'cache', separator: ':'}) {
+  constructor(cache: Cache, options: Options = { prefix: 'cache', separator: ':'}, logger: Logger | null = null) {
     this.prefix = options.prefix;
     this.separator = options.separator;
 
@@ -61,41 +62,61 @@ export class OctokitCache {
     }
 
     this.cache = cache;
+    this.logger = logger;
+  }
+
+  public hashIt(options): string {
+    const hash = objectHash(lodash.omit(options, ['headers']));
+    this.trace({hash}, 'hashIt');
+    return hash;
   }
 
   public async inCache(options): Promise<boolean> {
-    const hash = objectHash(lodash.omit(options, ['headers']));
+    const hash = this.hashIt(options);
     const exists = await this.cache.exists(`${this.prefix}${hash}${this.separator}etag`);
-    return exists;
+    this.trace({hash, exists}, `inCache - ${exists}`);
+    return Promise.resolve(exists);
   }
 
   public async getEtag(options): Promise<string> {
-    const hash = objectHash(lodash.omit(options, ['headers']));
-    return await this.cache.get(`${this.prefix}${hash}${this.separator}etag`);
+    const hash = this.hashIt(options);
+    const etag = await this.cache.get(`${this.prefix}${hash}${this.separator}etag`);
+    this.trace({hash, etag}, 'getEtag');
+    return Promise.resolve(etag);
   }
 
-  public async getCache(options) {
-    const hash = objectHash(lodash.omit(options, ['headers']));
+  public async getCache(options): Promise<any> {
+    const hash = this.hashIt(options);
 
     const data = await this.cache.get(`${this.prefix}${hash}${this.separator}data`);
     const headers = await this.cache.get(`${this.prefix}${hash}${this.separator}headers`);
     headers.status = '304 Not Modified';
     const status = 304;
 
-    return {
+    this.trace({hash, status}, 'getCache');
+
+    return Promise.resolve({
       data,
       headers,
       status,
-    };
+    });
   }
 
   public async putCache(options, results): Promise<boolean> {
-    const hash = objectHash(lodash.omit(options, ['headers']));
+    const hash = this.hashIt(options);
 
     await this.cache.set(`${this.prefix}${hash}${this.separator}etag`, results.headers.etag);
     await this.cache.set(`${this.prefix}${hash}${this.separator}data`, results.data);
     await this.cache.set(`${this.prefix}${hash}${this.separator}headers`, results.headers);
 
-    return true;
+    this.trace({hash, prefix: `${this.prefix}${hash}${this.separator}`}, 'putCache');
+
+    return Promise.resolve(true);
+  }
+
+  private trace(obj: any, msg: any): void {
+    if (this.logger !== null && typeof this.logger.child === 'function' && typeof this.logger.trace === 'function') {
+      this.logger.child({component: 'octokit/plugin/cache'}).trace(obj, msg);
+    }
   }
 }

@@ -139,30 +139,48 @@ describe('OctokitCache - logging', () => {
     }],
   });
 
-  const cache = new OctokitCache(new MemoryCache(), options);
+  const cache = new OctokitCache(new MemoryCache(), options, logger);
   const octokit = new Octokit() as any;
   octokit.plugin(OctokitPlugin(cache, logger))
 
   it('logs 3 times, does not return cached data on first call', async () => {
+    const expectedMessages = ['before: request - options','hashIt','inCache - false','after: request - options','after: status not 304 - caching results','hashIt','putCache'];
+
     await octokit.users.getFollowingForUser({
       username: 'ekristen',
     }).then(({data, headers, status}) => {
-      expect(loggerCallCount).to.be.equal(3);
-      expect(loggerMessages.shift()).to.be.equal('before: request - options');
-      expect(loggerMessages.shift()).to.be.equal('after: request - options');
-      expect(loggerMessages.shift()).to.be.equal('after: status not 304 - caching results');
+      expect(loggerCallCount).to.be.equal(7);
+      
+      for (var msg of expectedMessages) {
+        expect(loggerMessages.shift()).to.be.equal(msg);
+      }
+
       expect(status).to.be.equal(200);
     });
   });
 
   it('logs 3 times, returns cached data on second call', async () => {
+    const expectedMessages = [
+      'before: request - options',
+      'hashIt',
+      'inCache - true',
+      'hashIt',
+      'getEtag',
+      'request: etag header set',
+      'hashIt',
+      'getCache',
+      'after: request - options',
+    ];
+
     await octokit.users.getFollowingForUser({
       username: 'ekristen',
     }).then(({data, headers, status}) => {
-      expect(loggerCallCount).to.be.equal(6);
-      expect(loggerMessages.shift()).to.be.equal('before: request - options');
-      expect(loggerMessages.shift()).to.be.equal('request: etag header set');
-      expect(loggerMessages.shift()).to.be.equal('after: request - options');
+      expect(loggerCallCount).to.be.equal(16);
+
+      for (var msg of expectedMessages) {
+        expect(loggerMessages.shift()).to.be.equal(msg);
+      }
+
       expect(status).to.be.equal(304);
     });
   });

@@ -1,3 +1,4 @@
+import Logger = require('bunyan');
 import * as lodash from 'lodash';
 import * as objectHash from 'object-hash';
 
@@ -13,7 +14,13 @@ interface Cache {
   exists(key: string): Promise<boolean>;
 }
 
-export const OctokitPlugin = (cache: OctokitCache) => {
+export const OctokitPlugin = (cache: OctokitCache, logger: Logger | null = null) => {
+  const trace = (obj: any, msg: any) => {
+    if (logger !== null && typeof logger.child === 'function' && typeof logger.trace === 'function') {
+      logger.child({component: 'octokit/plugin/cache'}).trace(obj, msg);
+    }
+  };
+
   return (octokit) => {
     octokit.hook.error('request', async (err, options) => {
       if (err.code === 304) {
@@ -23,13 +30,17 @@ export const OctokitPlugin = (cache: OctokitCache) => {
       }
     });
     octokit.hook.before('request', async (options) => {
+      trace({options}, 'before: request - options');
       if (await cache.inCache(options) === true) {
         const etag = await cache.getEtag(options);
         options.headers['If-None-Match'] = etag;
+        trace({etag}, 'request: etag header set');
       }
     });
     octokit.hook.after('request', async (result, options) => {
+      trace({options}, 'after: request - options');
       if (result.status !== 304) {
+        trace({result}, 'after: status not 304 - caching results');
         await cache.putCache(options, result);
       }
     });

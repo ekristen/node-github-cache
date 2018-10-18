@@ -29,12 +29,15 @@
   },
   "devDependencies": {
     "@octokit/rest": "^15.9.4",
+    "@types/bunyan": "^1.8.5",
     "@types/chai": "^4.1.4",
     "@types/mocha": "^5.2.5",
     "@types/node": "^10.5.2",
+    "bunyan": "^1.8.12",
     "chai": "^4.1.2",
     "mocha": "^5.2.0",
     "precommit-hook": "^3.0.0",
+    "through2": "^2.0.3",
     "ts-node": "^7.0.0",
     "tslint": "^5.11.0",
     "typescript": "^2.9.2"

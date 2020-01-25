@@ -19,7 +19,7 @@
     "test:code": "node test.js"
   },
   "dependencies": {
-    "async": "^2.6.0",
+    "async": "^3.1.1",
     "debug": "^3.1.0",
     "libkv": "^0.8.1",
     "lodash": "^4.17.4"
